@@ -1,0 +1,35 @@
+# Git
+.git
+.gitignore
+
+# Python caching
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.env
+
+# Docker
+Dockerfile
+.dockerignore
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.swo
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Pre-commit
+.pre-commit-config.yaml
