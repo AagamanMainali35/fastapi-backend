@@ -15,11 +15,7 @@ class Settings(BaseSettings):
 
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        case_sensitive=False,
-        extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra="ignore")
 
 
 settings = Settings()

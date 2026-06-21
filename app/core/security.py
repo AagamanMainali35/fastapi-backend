@@ -10,6 +10,7 @@ from app.core.config import settings
 
 password_hash = PasswordHash.recommended()
 
+
 def hash_password(password: str) -> str:
     return password_hash.hash(password)
 
@@ -21,7 +22,7 @@ def verify_password(password: str, hashed: str) -> bool:
 def _create_token(subject: str | int, token_type: str, expires_delta: timedelta) -> str:
     now = datetime.now(timezone.utc)
     payload = {
-        "sub": str(subject),
+        "sub": str(subject),  # maps to a ceartin user who is attempting to log in sub.id
         "type": token_type,
         "iat": now,
         "exp": now + expires_delta,
