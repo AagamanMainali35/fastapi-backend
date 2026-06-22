@@ -15,6 +15,10 @@ class Settings(BaseSettings):
 
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    GOOGLE_CLIENT_ID: str
+
+    GOOGLE_CLIENT_SECRET: str
+
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra="ignore")
 
 
