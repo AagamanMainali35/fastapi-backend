@@ -3,6 +3,14 @@
 default_language_version:
     python: "python3.11.8"
 
+exclude: |
+  (?x)^(
+    migrations/|
+    .venv/|
+    __pycache__/|
+    .git/
+  )
+
 repos:
   # Basic file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
