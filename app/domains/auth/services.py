@@ -1,54 +1,64 @@
-from pwdlib import PasswordHash
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    hash_password,
+    verify_password,
+)
+from app.domains.auth.exceptions import InvalidCredentialsError, UserAlreadyExistsError
 from app.domains.auth.models import User
-from app.domains.auth.query import create_user, get_user_by_email
-
-password_hash = PasswordHash.recommended()
+from app.domains.auth.query import create_user, get_user_by_email, get_user_by_username
 
 
 class Authservice:
-
-    @staticmethod
-    def hash_password(password: str) -> str:
-        """Hash a password using Argon2id and return the hashed value."""
-        return password_hash.hash(password)
-
-    @staticmethod
-    def verify_password(plain_password: str, hashed_password: str) -> bool:
-        """Verify a plain password against its hashed value."""
-        return password_hash.verify(plain_password, hashed_password)
-
     @staticmethod
     async def register_user(session: AsyncSession, email: str, username: str, password: str) -> User:
-        """
-        Register a new user in the system.
 
-        This asynchronous function handles user registration by validating that the provided
-        email is not already registered, hashing the user's password, and creating a new
-        user record in the database.
+        existing_email = await get_user_by_email(session, email)
+        if existing_email:
+            raise UserAlreadyExistsError(message="Email already exists")
 
-        Args:
-            session (AsyncSession): The SQLAlchemy asynchronous database session used for
-                database operations. The session must be active and properly managed by
-                the caller (e.g., within an async context manager).
-            email (str): The user's email address. Must be a valid email format and unique
-                in the system. Case-sensitive comparison is performed during validation.
-            username (str): The desired username for the new account. Must be unique and
-                meet the application's username requirements (e.g., length, character set).
-            password (str): The user's plain-text password. Will be hashed using the
-                configured password hashing algorithm before storage. Must meet password
-                strength requirements (e.g., minimum length, complexity).
+        existing_username = await get_user_by_username(session, username)
+        if existing_username:
+            raise UserAlreadyExistsError(message="Username already exists")
 
-        Returns:
-            User: The newly created User ORM object, including the auto-generated user ID
-                and any other default values set by the database (e.g., created_at timestamp).
-        """
-        existing = await get_user_by_email(session, email)
-
-        if existing:
-            raise Exception("Email already exists")
-
-        user = User(email=email, user_name=username, hashed_password=Authservice.hash_password(password))
+        user = User(email=email, user_name=username, hashed_password=hash_password(password))
 
         return await create_user(session, user)
+
+    @staticmethod
+    async def login(session, email, password):
+
+        user = await get_user_by_email(session, email)
+
+        if not user:
+            raise InvalidCredentialsError(code=401, message="Invalid credentials")
+
+        if not verify_password(password, user.hashed_password):
+            raise InvalidCredentialsError(code=401, message="Invalid credentials")
+
+        return {"access_token": create_access_token(subject=user.id), "refresh_token": create_refresh_token(user.id), "token_type": "bearer"}
+
+    @staticmethod
+    async def google_login_or_register(session: AsyncSession, email: str, name: str, google_id: str):
+        import secrets
+        import string
+
+        user = await get_user_by_email(session, email)
+
+        if not user:
+            # Generate random password for social login user
+            alphabet = string.ascii_letters + string.digits + string.punctuation
+            random_password = "".join(secrets.choice(alphabet) for i in range(32))
+
+            # Create a unique username from email prefix
+            username_base = email.split("@")[0]
+            random_suffix = "".join(secrets.choice(string.ascii_lowercase + string.digits) for i in range(6))
+            username = f"{username_base}_{random_suffix}"
+
+            new_user = User(email=email, user_name=username, hashed_password=hash_password(random_password))
+            user = await create_user(session, new_user)
+
+        return {"access_token": create_access_token(subject=user.id), "refresh_token": create_refresh_token(user.id), "token_type": "bearer"}
