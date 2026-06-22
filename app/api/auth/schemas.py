@@ -1,12 +1,24 @@
 # Pydantic schemas for Auth
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 
-class LoginRequest(BaseModel):
-    email: str
+class UserBase(BaseModel):
+    email: EmailStr
+
+
+class LoginRequest(UserBase):
     password: str
 
 
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
+class RegisterRequest(UserBase):
+    username: str
+    password: str
+
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    username: str
+
+    class Config:
+        from_attributes = True
