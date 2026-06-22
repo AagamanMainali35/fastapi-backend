@@ -1,5 +1,5 @@
-import sys
 import asyncio
+import sys
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -8,13 +8,12 @@ sys.path.insert(0, str(BASE_DIR))
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy.ext.asyncio import async_engine_from_config
 from sqlalchemy import pool
-from app.core.db import Base
+from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.core.config import settings
+from app.core.db import Base
 from app.domains.auth.models import Permission, Role, User
-
 
 config = context.config
 
