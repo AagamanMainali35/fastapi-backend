@@ -1,5 +1,5 @@
 # Pydantic schemas for Auth
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class UserBase(BaseModel):
@@ -16,12 +16,11 @@ class RegisterRequest(UserBase):
 
 
 class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
     id: int
     email: str
-    username: str
-
-    class Config:
-        from_attributes = True
+    username: str = Field(validation_alias="user_name")
 
 
 class TokenResponse(BaseModel):

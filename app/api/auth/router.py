@@ -1,37 +1,45 @@
 from urllib.parse import urlencode
 
-import httpx
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
-from google.auth.transport import requests as google_requests
-from google.oauth2 import id_token
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.auth.schemas import LoginRequest, RegisterRequest, TokenResponse
-from app.core.base_execption import AppException
+from app.api.auth.schemas import (
+    LoginRequest,
+    RegisterRequest,
+    TokenResponse,
+    UserResponse,
+)
+from app.api.dependencies import get_current_active_user
 from app.core.config import settings
-from app.core.db import get_db
-from app.domains.auth.services import Authservice
+from app.core.database import get_db
+from app.core.exceptions import AppException
+from app.domains.auth.models import User
+from app.domains.auth.service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/register", name="register")
+@router.post("/register", response_model=UserResponse, status_code=201, name="register")
 async def register(
     user: RegisterRequest,
     session: AsyncSession = Depends(get_db),  # noqa: B008
 ):
-    return await Authservice.register_user(session, user.email, user.username, user.password)
+    return await AuthService.register_user(session, user.email, user.username, user.password)
 
 
-@router.post("/login", name="login")
+@router.post("/login", response_model=TokenResponse, name="login")
 async def login(user: LoginRequest, session: AsyncSession = Depends(get_db)):  # noqa: B008
-    return await Authservice.login(session, user.email, user.password)
+    return await AuthService.login(session, user.email, user.password)
+
+
+@router.get("/me", response_model=UserResponse, name="me")
+async def me(current_user: User = Depends(get_current_active_user)):  # noqa: B008
+    return current_user
 
 
 @router.get("/google/login")
 async def google_login(request: Request):
-
     redirect_uri = str(request.url_for("google_callback"))
 
     params = {
@@ -47,52 +55,20 @@ async def google_login(request: Request):
     return RedirectResponse(google_url)
 
 
-@router.get("/google/callback", name="google_callback")
+@router.get("/google/callback", response_model=TokenResponse, name="google_callback")
 async def google_callback(request: Request, session: AsyncSession = Depends(get_db)):  # noqa: B008
-
     code = request.query_params.get("code")
 
     if not code:
-        return {"error": "No authorization code received"}
+        raise AppException(message="No authorization code received", code=400)
 
     redirect_uri = str(request.url_for("google_callback"))
 
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            "https://oauth2.googleapis.com/token",
-            data={
-                "client_id": settings.GOOGLE_CLIENT_ID,
-                "client_secret": settings.GOOGLE_CLIENT_SECRET,
-                "code": code,
-                "grant_type": "authorization_code",
-                "redirect_uri": redirect_uri,
-            },
-        )
+    google_user = await AuthService.exchange_google_code(code, redirect_uri)
 
-    if response.status_code != 200:
-        raise AppException(message="Failed to exchange authorization code with Google", code=400, errors={"detail": response.text})
-
-    token_data = response.json()
-
-    if "id_token" not in token_data:
-        raise AppException(message="No ID token found in Google response", code=400, errors=token_data)
-
-    google_token = token_data["id_token"]
-
-    try:
-        google_user = id_token.verify_oauth2_token(google_token, google_requests.Request(), settings.GOOGLE_CLIENT_ID, clock_skew_in_seconds=10)
-    except ValueError as e:
-        raise AppException(message=f"Invalid Google ID token: {str(e)}", code=400)
-
-    email = google_user["email"]
-    google_id = google_user["sub"]
-    name = google_user.get("name")
-
-    # authenticate or register the user
-    return await Authservice.google_login_or_register(session, email, name, google_id)
-
-
-@router.post("/ping")
-async def ping():
-    print("🔥 PING HIT")
-    return {"ok": True}
+    return await AuthService.google_login_or_register(
+        session,
+        email=google_user["email"],
+        name=google_user["name"],
+        google_id=google_user["google_id"],
+    )

@@ -1,4 +1,4 @@
-from app.core.base_execption import AppException
+from app.core.exceptions import AppException
 
 
 class InvalidCredentialsError(AppException):
