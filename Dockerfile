@@ -10,14 +10,12 @@ WORKDIR /app
 # Install uv directly from their official image
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
-# Create a virtual environment
 RUN uv venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy package configuration
 COPY pyproject.toml ./
-# If you use uv.lock, uncomment the next line to copy it:
-# COPY uv.lock ./
+
+COPY uv.lock ./
 
 # Install dependencies using uv into the virtual environment
 # (using --no-cache avoids saving downloaded packages to keep image small)

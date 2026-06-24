@@ -2,6 +2,7 @@
 
 import secrets
 import string
+from datetime import datetime, timedelta, timezone
 
 import httpx
 from google.auth.transport import requests as google_requests
@@ -16,13 +17,21 @@ from app.core.security import (
     hash_password,
     verify_password,
 )
-from app.domains.auth.exceptions import InvalidCredentialsError, UserAlreadyExistsError
+from app.domains.auth.exceptions import (
+    EmailVerificationError,
+    InvalidCredentialsError,
+    UserAlreadyExistsError,
+    UserNotVerifiedError,
+)
 from app.domains.auth.models import User
 from app.domains.auth.repository import (
     create_user,
     get_user_by_email,
     get_user_by_username,
+    mark_user_verified,
+    update_verification_code,
 )
+from app.workers.task import send_verification_email_task
 
 
 class AuthService:
@@ -40,7 +49,20 @@ class AuthService:
 
         user = User(email=email, user_name=username, hashed_password=hash_password(password))
 
-        return await create_user(session, user)
+        user = await create_user(session, user)
+
+        code = "".join(secrets.choice(string.digits) for _ in range(6))
+        hashed_code = hash_password(code)
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.VERIFICATION_CODE_EXPIRE_MINUTES)
+
+        await update_verification_code(session, user, hashed_code, expires_at)
+
+        try:
+            send_verification_email_task.delay(user.email, code)
+        except Exception:
+            pass
+
+        return user
 
     @staticmethod
     async def login(session: AsyncSession, email: str, password: str) -> dict:
@@ -48,6 +70,9 @@ class AuthService:
 
         if not user:
             raise InvalidCredentialsError(code=401, message="Invalid credentials")
+
+        if not user.is_verified:
+            raise UserNotVerifiedError()
 
         if not verify_password(password, user.hashed_password):
             raise InvalidCredentialsError(code=401, message="Invalid credentials")
@@ -57,6 +82,49 @@ class AuthService:
             "refresh_token": create_refresh_token(user.id),
             "token_type": "bearer",
         }
+
+    @staticmethod
+    async def verify_email(session: AsyncSession, email: str, code: str) -> dict:
+        user = await get_user_by_email(session, email)
+        if not user:
+            raise EmailVerificationError()
+
+        if user.is_verified:
+            return {"message": "Email is already verified"}
+
+        if not user.verification_code or not user.verification_code_expires_at:
+            raise EmailVerificationError()
+
+        if datetime.now(timezone.utc) > user.verification_code_expires_at:
+            raise EmailVerificationError(message="Verification code has expired")
+
+        if not verify_password(code, user.verification_code):
+            raise EmailVerificationError(message="Invalid verification code")
+
+        await mark_user_verified(session, user)
+        return {"message": "Email successfully verified"}
+
+    @staticmethod
+    async def resend_verification_code(session: AsyncSession, email: str) -> dict:
+        user = await get_user_by_email(session, email)
+        if not user:
+            return {"message": "If the email is registered, a new verification code has been sent"}
+
+        if user.is_verified:
+            return {"message": "Email is already verified"}
+
+        code = "".join(secrets.choice(string.digits) for _ in range(6))
+        hashed_code = hash_password(code)
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.VERIFICATION_CODE_EXPIRE_MINUTES)
+
+        await update_verification_code(session, user, hashed_code, expires_at)
+
+        try:
+            send_verification_email_task.delay(user.email, code)
+        except Exception:
+            pass  # Non-blocking on email failure for now
+
+        return {"message": "A new verification code has been sent"}
 
     @staticmethod
     async def google_login_or_register(session: AsyncSession, email: str, name: str, google_id: str) -> dict:

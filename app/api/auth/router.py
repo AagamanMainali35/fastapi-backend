@@ -6,9 +6,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth.schemas import (
     LoginRequest,
+    MessageResponse,
     RegisterRequest,
+    ResendVerificationRequest,
     TokenResponse,
     UserResponse,
+    VerifyEmailRequest,
 )
 from app.api.dependencies import get_current_active_user
 from app.core.config import settings
@@ -31,6 +34,16 @@ async def register(
 @router.post("/login", response_model=TokenResponse, name="login")
 async def login(user: LoginRequest, session: AsyncSession = Depends(get_db)):  # noqa: B008
     return await AuthService.login(session, user.email, user.password)
+
+
+@router.post("/verify-email", response_model=MessageResponse, name="verify_email")
+async def verify_email(request: VerifyEmailRequest, session: AsyncSession = Depends(get_db)):  # noqa: B008
+    return await AuthService.verify_email(session, request.email, request.code)
+
+
+@router.post("/resend-verification", response_model=MessageResponse, name="resend_verification")
+async def resend_verification(request: ResendVerificationRequest, session: AsyncSession = Depends(get_db)):  # noqa: B008
+    return await AuthService.resend_verification_code(session, request.email)
 
 
 @router.get("/me", response_model=UserResponse, name="me")

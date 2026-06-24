@@ -20,3 +20,19 @@ class UserAlreadyExistsError(AppException):
         self.message = message
         self.code = code
         self.errors = errors
+
+
+class EmailVerificationError(AppException):
+    def __init__(self, message: str = "Invalid or expired verification code", code: int = 400, errors=None):
+        super().__init__(message)
+        self.message = message
+        self.code = code
+        self.errors = errors
+
+
+class UserNotVerifiedError(AppException):
+    def __init__(self, message: str = "User email not verified", code: int = 403, errors=None):
+        super().__init__(message)
+        self.message = message
+        self.code = code
+        self.errors = errors
