@@ -13,7 +13,8 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.core.config import settings
 from app.core.base import Base
-from app.domains.auth.models import Permission, Role, User
+from app.domains.auth.models import User
+from app.domains.roles.models import Permission, Role
 
 config = context.config
 
