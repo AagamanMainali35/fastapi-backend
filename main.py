@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.api.auth.router import router as auth_router
+from app.api.roles.router import router as roles_router
 from app.core.exceptions import AppException
 
 app = FastAPI(
@@ -25,3 +26,4 @@ async def app_exception_handler(request: Request, exc: AppException):
 api_v1_prefix = "/api/v1"
 
 app.include_router(auth_router, prefix=api_v1_prefix)
+app.include_router(roles_router, prefix=api_v1_prefix)
