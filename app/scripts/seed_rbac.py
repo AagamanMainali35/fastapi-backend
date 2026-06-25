@@ -3,7 +3,7 @@ import asyncio
 from sqlalchemy import select
 
 from app.core.database import AsyncSessionLocal
-from app.domains.auth.models import Permission, Role
+from app.domains.roles.models import Permission, Role
 
 permissions = [
     {"name": "users:create", "description": "Create users"},
