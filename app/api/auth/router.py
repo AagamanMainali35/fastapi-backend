@@ -13,10 +13,10 @@ from app.api.auth.schemas import (
     UserResponse,
     VerifyEmailRequest,
 )
-from app.api.dependencies import get_current_active_user
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.exceptions import AppException
+from app.domains.auth.dependencies import get_current_active_user
 from app.domains.auth.models import User
 from app.domains.auth.service import AuthService
 

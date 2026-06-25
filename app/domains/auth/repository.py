@@ -5,7 +5,9 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domains.auth.models import Role, User
+from app.domains.auth.models import User
+from app.domains.roles.models import Role
+from app.domains.roles.repository import get_role_by_name
 
 
 async def get_user_by_id(session: AsyncSession, user_id: int) -> User | None:
@@ -21,17 +23,6 @@ async def get_user_by_email(session: AsyncSession, email: str) -> User | None:
 async def get_user_by_username(session: AsyncSession, username: str) -> User | None:
     result = await session.execute(select(User).where(User.user_name == username))
     return result.scalar_one_or_none()
-
-
-async def get_role_by_name(session: AsyncSession, role_name: str) -> Role | None:
-    result = await session.execute(select(Role).where(Role.name == role_name))
-    return result.scalar_one_or_none()
-
-
-async def create_role(session: AsyncSession, role: Role) -> Role:
-    session.add(role)
-    await session.flush()
-    return role
 
 
 async def create_user(session: AsyncSession, user: User) -> User:
