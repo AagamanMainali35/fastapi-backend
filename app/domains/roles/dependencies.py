@@ -6,7 +6,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
-from app.core.exceptions import PermissionDeniedError, RoleNotAssignedError, RoleNotFoundError
+from app.core.exceptions import (
+    PermissionDeniedError,
+    RoleNotAssignedError,
+    RoleNotFoundError,
+)
 from app.domains.auth.dependencies import get_current_active_user
 from app.domains.auth.models import User
 from app.domains.roles.models import Role
@@ -26,11 +30,7 @@ class RoleChecker:
         if not current_user.role_id:
             raise RoleNotAssignedError()
 
-        result = await db.execute(
-            select(Role)
-            .options(selectinload(Role.permissions))
-            .where(Role.id == current_user.role_id)
-        )
+        result = await db.execute(select(Role).options(selectinload(Role.permissions)).where(Role.id == current_user.role_id))
         role = result.scalar_one_or_none()
 
         if not role:
