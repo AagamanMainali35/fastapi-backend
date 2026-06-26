@@ -4,7 +4,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.core.database import AsyncSessionLocal
+from app.core.security import hash_password
 from app.domains.auth.models import User  # Needed to register User in SQLAlchemy mapper
+from app.domains.auth.repository import create_user
 from app.domains.roles.models import Permission, Role
 
 permissions = [
@@ -52,6 +54,17 @@ async def seed():
         user_role = user.scalar_one()
 
         admin_role = admin.scalar_one()
+
+        admin_user_result = await session.execute(select(User).where(User.email == "admin@admin.com"))
+        if not admin_user_result.scalar_one_or_none():
+            new_admin = User(
+                email="admin@admin.com",
+                user_name="admin",
+                hashed_password=hash_password("123"),
+                is_verified=True,
+            )
+            await create_user(session, new_admin, role_name="admin")
+            print("Admin user created successfully.")
 
         admin_perms = await session.execute(select(Permission))
 
