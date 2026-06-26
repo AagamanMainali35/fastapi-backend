@@ -9,7 +9,6 @@ from app.domains.auth.dependencies import get_current_active_user
 from app.domains.roles.dependencies import RoleChecker
 from app.domains.roles.service import RoleService
 
-
 router = APIRouter(prefix="/roles", tags=["roles"])
 
 
@@ -17,8 +16,7 @@ router = APIRouter(prefix="/roles", tags=["roles"])
 async def list_roles(
     db: AsyncSession = Depends(get_db),  # noqa: B008
     current_user=Depends(get_current_active_user),  # noqa: B008
-    _ = Depends(RoleChecker(["roles:read"])),  # noqa: B008
-    
+    _=Depends(RoleChecker(["roles:read"])),  # noqa: B008
 ):
     return await RoleService.get_all_roles(db)
 
@@ -28,7 +26,7 @@ async def create_role(
     role_in: RoleCreate,
     db: AsyncSession = Depends(get_db),  # noqa: B008
     current_user=Depends(get_current_active_user),  # noqa: B008
-    _ = Depends(RoleChecker(["roles:create"])),  # noqa: B008
+    _=Depends(RoleChecker(["roles:create"])),  # noqa: B008
 ):
     return await RoleService.create_role(db, role_in.model_dump())
 
@@ -38,7 +36,7 @@ async def get_role(
     role_id: int,
     db: AsyncSession = Depends(get_db),  # noqa: B008
     current_user=Depends(get_current_active_user),  # noqa: B008
-    _ = Depends(RoleChecker(["roles:read"])),  # noqa: B008
+    _=Depends(RoleChecker(["roles:read"])),  # noqa: B008
 ):
     return await RoleService.get_role(db, role_id)
 
@@ -49,7 +47,7 @@ async def update_role(
     role_in: RoleUpdate,
     db: AsyncSession = Depends(get_db),  # noqa: B008
     current_user=Depends(get_current_active_user),  # noqa: B008
-    _ = Depends(RoleChecker(["roles:update"])),  # noqa: B008
+    _=Depends(RoleChecker(["roles:update"])),  # noqa: B008
 ):
     update_data = role_in.model_dump(exclude_unset=True)
     return await RoleService.update_role(db, role_id, update_data)
@@ -60,6 +58,6 @@ async def delete_role(
     role_id: int,
     db: AsyncSession = Depends(get_db),  # noqa: B008
     current_user=Depends(get_current_active_user),  # noqa: B008
-    _ = Depends(RoleChecker(["roles:delete"])),  # noqa: B008
+    _=Depends(RoleChecker(["roles:delete"])),  # noqa: B008
 ):
     await RoleService.delete_role(db, role_id)
