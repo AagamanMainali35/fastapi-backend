@@ -25,11 +25,11 @@ async def get_user_by_username(session: AsyncSession, username: str) -> User | N
     return result.scalar_one_or_none()
 
 
-async def create_user(session: AsyncSession, user: User) -> User:
-    role_obj = await get_role_by_name(session, "user")
+async def create_user(session: AsyncSession, user: User, role_name: str = "user") -> User:
+    role_obj = await get_role_by_name(session, role_name)
 
     if role_obj is None:
-        role_obj = Role(name="user", description="user")
+        role_obj = Role(name=role_name, description=role_name)
         session.add(role_obj)
         await session.flush()
 
