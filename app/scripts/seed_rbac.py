@@ -1,8 +1,10 @@
 import asyncio
 
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.core.database import AsyncSessionLocal
+from app.domains.auth.models import User  # Needed to register User in SQLAlchemy mapper
 from app.domains.roles.models import Permission, Role
 
 permissions = [
@@ -10,6 +12,10 @@ permissions = [
     {"name": "users:read", "description": "Read users"},
     {"name": "users:update", "description": "Update users"},
     {"name": "users:delete", "description": "Delete users"},
+    {"name": "roles:create", "description": "Create roles"},
+    {"name": "roles:read", "description": "Read roles"},
+    {"name": "roles:update", "description": "Update roles"},
+    {"name": "roles:delete", "description": "Delete roles"},
 ]
 
 
@@ -39,9 +45,9 @@ async def seed():
 
         await session.commit()
 
-        admin = await session.execute(select(Role).where(Role.name == "admin"))
+        admin = await session.execute(select(Role).options(selectinload(Role.permissions)).where(Role.name == "admin"))
 
-        user = await session.execute(select(Role).where(Role.name == "user"))
+        user = await session.execute(select(Role).options(selectinload(Role.permissions)).where(Role.name == "user"))
 
         user_role = user.scalar_one()
 
