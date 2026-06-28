@@ -5,8 +5,8 @@ from app.core.exceptions import (
     RoleNotFoundError,
     SystemRoleDeleteError,
 )
-from app.domains.roles import repository
 from app.domains.roles.models import Role
+from app.repositories import role as repository
 
 
 class RoleService:
@@ -23,6 +23,7 @@ class RoleService:
 
     @staticmethod
     async def create_role(session: AsyncSession, create_data: dict) -> Role:
+        """Take the dictionary and db session as a parameter and pass the context."""
         existing = await repository.get_role_by_name(session, create_data.get("name"))
         if existing:
             raise RoleAlreadyExistsError()
