@@ -27,5 +27,5 @@ async def app_exception_handler(request: Request, exc: AppException):
 api_v1_prefix = "/api/v1"
 
 app.include_router(auth_router, prefix=api_v1_prefix)
-app.include_router(roles_router, prefix=api_v1_prefix)
 app.include_router(users_router, prefix=api_v1_prefix)
+app.include_router(roles_router, prefix=api_v1_prefix)
