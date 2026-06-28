@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
-    from app.domains.auth.models import User
+    from app.domains.users.models import User
 
 from sqlalchemy import Column, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import Mapped, mapped_column, relationship

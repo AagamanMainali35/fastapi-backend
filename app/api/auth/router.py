@@ -1,3 +1,4 @@
+import logging
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Request
@@ -17,9 +18,10 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.exceptions import AppException
 from app.domains.auth.dependencies import get_current_active_user
-from app.domains.auth.models import User
 from app.domains.auth.service import AuthService
+from app.domains.users.models import User
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
@@ -28,6 +30,7 @@ async def register(
     user: RegisterRequest,
     session: AsyncSession = Depends(get_db),  # noqa: B008
 ):
+    logger.info(user)
     return await AuthService.register_user(session, user.email, user.username, user.password)
 
 

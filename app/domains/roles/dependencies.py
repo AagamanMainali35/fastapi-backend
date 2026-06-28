@@ -12,8 +12,8 @@ from app.core.exceptions import (
     RoleNotFoundError,
 )
 from app.domains.auth.dependencies import get_current_active_user
-from app.domains.auth.models import User
 from app.domains.roles.models import Role
+from app.domains.users.models import User
 
 
 class RoleChecker:

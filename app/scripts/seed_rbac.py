@@ -5,9 +5,11 @@ from sqlalchemy.orm import selectinload
 
 from app.core.database import AsyncSessionLocal
 from app.core.security import hash_password
-from app.domains.auth.models import User  # Needed to register User in SQLAlchemy mapper
-from app.domains.auth.repository import create_user
 from app.domains.roles.models import Permission, Role
+from app.domains.users.models import (
+    User,  # Needed to register User in SQLAlchemy mapper
+)
+from app.repositories.user import create_user
 
 permissions = [
     {"name": "users:create", "description": "Create users"},

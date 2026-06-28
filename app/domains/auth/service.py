@@ -23,14 +23,15 @@ from app.core.security import (
     hash_password,
     verify_password,
 )
-
-from app.domains.auth.models import User
-from app.domains.auth.repository import (
+from app.domains.users.models import User
+from app.repositories.auth import (
+    mark_user_verified,
+    update_verification_code,
+)
+from app.repositories.user import (
     create_user,
     get_user_by_email,
     get_user_by_username,
-    mark_user_verified,
-    update_verification_code,
 )
 from app.workers.task import send_verification_email_task
 
